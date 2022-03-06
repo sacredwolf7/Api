@@ -1,4 +1,5 @@
 ﻿using Api.Models;
+using APIdata;
 using APIdata.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
@@ -7,18 +8,20 @@ namespace Api.Controllers
 {
     public class BlogController : Controller
     {
+        private IApiDbContext _dbContext;
+        
+        public BlogController(IApiDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
         [HttpGet]
         [Route("api/blog/{id}")]
-        public int GetBlogs([FromRoute] int id)
+        public Blogs GetBlogs([FromRoute] int id)
         {
-            if(id != null)
-            {
-                return 1;
-            }
-            else
-            {
-                return 0;
-            }
+            Blogs blogs = new Blogs();
+            blogs = _dbContext.Blogs.Where(x => x.Id == id).FirstOrDefault();
+            return blogs;
         }
         [HttpGet]
         [Route("api/blogs")]
@@ -39,12 +42,27 @@ namespace Api.Controllers
             return true;
         }
         [HttpPut]
-        [Route("api/blog/{id}")]
-        public Blogs updateBlog([FromRoute] int id)
+        [Route("api/blog")]
+        public bool UpdateBlog([FromBody] UpdateBlog updateBlog)
         {
-            List<Blogs> blogs = new List<Blogs>();
-            Blogs blog = blogs.Where(bl => bl.Id == id).FirstOrDefault();
-            return blog;
+            if(UpdateBlog != null)
+            {
+                using(var context = new ApiDbContext())
+            {
+
+                    List<Blogs> blogs = new List<Blogs>();
+                    blogs = _dbContext.Blogs.ToList();
+                    Blogs blog = blogs.Where(bl => bl.Id == updateBlog.Id).FirstOrDefault();
+                    blog.title = updateBlog.title;
+                    blog.description = updateBlog.description;
+                    context.SaveChangesAsync();
+                }
+                return true; 
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }
